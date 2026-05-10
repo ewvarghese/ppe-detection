@@ -1,0 +1,10 @@
+{
+  "active_camera_id": "default-camera",
+  "cameras": [
+    {
+      "id": "default-camera",
+      "name": "Main Site Camera",
+      "url": "http://10.205.245.204:5000/video_feed"
+    }
+  ]
+}
