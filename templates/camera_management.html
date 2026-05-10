@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --text-strong: #f8fafc;
+            --text-soft: #dbe7f3;
+            --panel-border: rgba(148, 163, 184, 0.28);
+        }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #111827 45%, #1e293b 100%);
+            color: var(--text-strong);
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(12px);
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: var(--text-strong);
+        }
+        p, td, span, .small, .form-label {
+            color: #e5edf6;
+        }
+        .camera-table td, .camera-table th {
+            vertical-align: middle;
+        }
+        .page-link {
+            color: #f8fafc;
+            text-decoration: none;
+        }
+        .page-link:hover {
+            color: #38bdf8;
+        }
+        .toolbar-input {
+            background: rgba(2, 6, 23, 0.82);
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            color: var(--text-strong);
+            border-radius: 14px;
+        }
+        .toolbar-input::placeholder {
+            color: #cbd5e1;
+            opacity: 1;
+        }
+        .toolbar-input:focus {
+            background: rgba(2, 6, 23, 0.9);
+            color: #fff;
+            border-color: rgba(56, 189, 248, 0.45);
+            box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.12);
+        }
+        .form-control {
+            background: rgba(2, 6, 23, 0.82);
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            color: var(--text-strong);
+        }
+        .form-control::placeholder {
+            color: #cbd5e1;
+            opacity: 1;
+        }
+        .form-control:focus {
+            background: rgba(2, 6, 23, 0.9);
+            color: #fff;
+            border-color: rgba(56, 189, 248, 0.45);
+            box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.12);
+        }
+        .camera-row.is-hidden {
+            display: none;
+        }
+        .camera-row.is-highlighted {
+            outline: 1px solid rgba(56, 189, 248, 0.5);
+            background: rgba(56, 189, 248, 0.08);
+        }
+        .status-chip {
+            border-radius: 999px;
+            border: 1px solid rgba(56, 189, 248, 0.28);
+            background: rgba(8, 17, 31, 0.85);
+            color: var(--text-strong);
+        }
+        .text-secondary {
+            color: var(--text-soft) !important;
+        }
+        .table-dark {
+            --bs-table-color: #f8fafc;
+            --bs-table-bg: transparent;
+            --bs-table-border-color: rgba(148, 163, 184, 0.16);
+            --bs-table-striped-color: #f8fafc;
+            --bs-table-hover-color: #ffffff;
+            --bs-table-hover-bg: rgba(56, 189, 248, 0.08);
+        }
+        .btn-outline-light {
+            color: #f8fafc;
+            border-color: rgba(248, 250, 252, 0.75);
+        }
+        .btn-outline-light:hover {
+            color: #08111f;
+            background: #f8fafc;
+            border-color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4 py-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <p class="text-uppercase text-info mb-2 small">System Configuration</p>
+            <h1 class="h2 mb-1">Camera Management</h1>
+            <p class="text-secondary mb-0">Add IP camera streams, run detection on all of them together, and choose which one is featured on the dashboard.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-light" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mb-2">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card glass-panel shadow-lg h-100">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Add New Camera</h2>
+                    <p class="text-secondary">Use the stream endpoint exposed by each IP camera or remote video server.</p>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label" for="camera_name">Camera Name</label>
+                            <input class="form-control" id="camera_name" name="camera_name" placeholder="Front Gate Camera" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="camera_url">Camera Stream URL</label>
+                            <input class="form-control" id="camera_url" name="camera_url" placeholder="http://192.168.1.20:5000/video_feed" required>
+                        </div>
+                        <button class="btn btn-info w-100" type="submit">Save Camera</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card glass-panel shadow-lg h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+                        <h2 class="h4 mb-0">Configured Cameras</h2>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <input class="form-control form-control-sm toolbar-input" id="cameraTableSearch" type="search" placeholder="Search cameras">
+                            <button class="btn btn-sm status-chip" id="clearCameraSearch" type="button">Clear</button>
+                            <span class="badge text-bg-light">{{ cameras|length }} total</span>
+                        </div>
+                    </div>
+
+                    {% if cameras %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle camera-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Stream URL</th>
+                                        <th>Dashboard</th>
+                                        <th>Detection</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for camera in cameras %}
+                                        <tr class="camera-row" data-camera-name="{{ camera.name|lower }}" data-camera-url="{{ camera.url|lower }}" data-camera-status="{{ camera_statuses.get(camera.id, 'starting') }}">
+                                            <td>{{ camera.name }}</td>
+                                            <td class="small text-break">{{ camera.url }}</td>
+                                            <td>
+                                                {% if camera.id == active_camera_id %}
+                                                    <span class="badge text-bg-success">Featured</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-secondary">Shown in Grid</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% set status = camera_statuses.get(camera.id, 'starting') %}
+                                                {% if status == 'live' %}
+                                                    <span class="badge text-bg-success text-capitalize">{{ status }}</span>
+                                                {% elif status in ['offline', 'reconnecting'] %}
+                                                    <span class="badge text-bg-warning text-capitalize">{{ status }}</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-secondary text-capitalize">{{ status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    {% if camera.id != active_camera_id %}
+                                                        <form method="post" action="{{ url_for('activate_camera', camera_id=camera.id) }}">
+                                                            <button class="btn btn-sm btn-outline-info" type="submit">Feature</button>
+                                                        </form>
+                                                    {% endif %}
+                                                    <form method="post" action="{{ url_for('delete_camera', camera_id=camera.id) }}">
+                                                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="border border-secondary rounded-3 p-4 text-center text-secondary">
+                            No cameras have been added yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function applyCameraTableSearch() {
+        const query = (document.getElementById("cameraTableSearch")?.value || "").trim().toLowerCase();
+        document.querySelectorAll(".camera-row").forEach((row) => {
+            const matches = !query
+                || row.dataset.cameraName.includes(query)
+                || row.dataset.cameraUrl.includes(query)
+                || row.dataset.cameraStatus.includes(query);
+            row.classList.toggle("is-hidden", !matches);
+            row.classList.toggle("is-highlighted", !!query && matches);
+        });
+    }
+
+    document.getElementById("cameraTableSearch")?.addEventListener("input", applyCameraTableSearch);
+    document.getElementById("clearCameraSearch")?.addEventListener("click", () => {
+        const input = document.getElementById("cameraTableSearch");
+        if (input) {
+            input.value = "";
+        }
+        applyCameraTableSearch();
+    });
+</script>
+</body>
+</html>
